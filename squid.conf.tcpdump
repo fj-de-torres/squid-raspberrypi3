@@ -1,0 +1,32 @@
+#To be used with tcpdump
+acl SSL_ports port 443
+acl CONNECT method CONNECT
+acl manager proto cache_object
+http_access deny !Safe_ports
+http_access deny CONNECT !SSL_ports
+http_access allow localhost manager
+http_access deny manager
+http_access allow localnet
+http_access allow local
+hosthttp_access deny all
+http_port 3128
+cache_dir ufs /usr/local/squid/var/cache/squid 100 16 256
+coredump_dir /usr/local/squid/var/cache/squid
+refresh_pattern ^ftp:  1440 20% 10080
+refresh_pattern ^gopher: 1440 0% 1440
+refresh_pattern -i (/cgi-bin/|?) 0 0% 0
+refresh_pattern -i .(gif|png|jpg|jpeg|ico)$ 10080 90% 43200 override-expire ignore-no-cache ignore-no-store ignore-private
+refresh_pattern -i .(iso|avi|wav|mp3|mp4|mpeg|swf|flv|x-flv)$ 43200 90% 432000 override-expire ignore-no-cache ignore-no-store ignore-private
+refresh_pattern -i .(deb|rpm|exe|zip|tar|tgz|ram|rar|bin|ppt|doc|tiff)$ 10080 90% 43200 override-expire ignore-no-cache ignore-no-store ignore-private
+refresh_pattern -i .index.(html|htm)$ 0 40% 10080refresh_pattern -i .(html|htm|css|js)$ 1440 40% 40320
+refresh_pattern -i youtube.com/.* 10080 90% 43200
+refresh_pattern (/cgi-bin/|?) 0 0% 0
+refresh_pattern .  0 20% 4320
+http_port 3128 ssl-bump   cert=/etc/squid/ssl_cert/myCA.pem   generate-host-certificates=on dynamic_cert_mem_cache_size=4MBsslcrtd_program /usr/local/squid/libexec/security_file_certgen -s /var/lib/ssl_db -M 4MB
+acl step1 at_step SslBump1ssl_bump peek all
+ssl_bump stare all
+ssl_bump bump all
+cache allow all
+access_log stdio:/usr/local/squid/var/logs/access.log combined
+cache_store_log stdio:/usr/local/squid/var/logs/store.log
+cache_log stdio:/usr/local/squid/var/logs/cache.log
